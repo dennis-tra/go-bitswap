@@ -116,6 +116,8 @@ func (pqm *ProviderQueryManager) SetFindProviderTimeout(findProviderTimeout time
 
 // FindProvidersAsync finds providers for the given block.
 func (pqm *ProviderQueryManager) FindProvidersAsync(sessionCtx context.Context, k cid.Cid) <-chan peer.ID {
+	fmt.Println("I'm here new 1")
+
 	inProgressRequestChan := make(chan inProgressRequest)
 
 	select {
@@ -231,6 +233,7 @@ func (pqm *ProviderQueryManager) findProviderWorker() {
 			pqm.timeoutMutex.RLock()
 			findProviderCtx, cancel := context.WithTimeout(fpr.ctx, pqm.findProviderTimeout)
 			pqm.timeoutMutex.RUnlock()
+			fmt.Println("I'm here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", k)
 			providers := pqm.network.FindProvidersAsync(findProviderCtx, k, maxProviders)
 			wg := &sync.WaitGroup{}
 			for p := range providers {
@@ -379,6 +382,7 @@ func (npqm *newProvideQueryMessage) handle(pqm *ProviderQueryManager) {
 			cancelFn:  cancelFn,
 		}
 		pqm.inProgressRequestStatuses[npqm.k] = requestStatus
+		fmt.Println("I'm here new 0.", npqm.k)
 		select {
 		case pqm.incomingFindProviderRequests <- &findProviderRequest{
 			k:   npqm.k,

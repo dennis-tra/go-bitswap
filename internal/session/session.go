@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	bsbpm "github.com/ipfs/go-bitswap/internal/blockpresencemanager"
@@ -229,6 +230,7 @@ func (s *Session) logReceiveFrom(from peer.ID, interestedKs []cid.Cid, haves []c
 
 // GetBlock fetches a single block.
 func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, error) {
+	fmt.Println("I'm here....1? Entry point?")
 	return bsgetter.SyncGetBlock(parent, k, s.GetBlocks)
 }
 
@@ -236,6 +238,7 @@ func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, err
 // returns a channel that found blocks will be returned on. No order is
 // guaranteed on the returned blocks.
 func (s *Session) GetBlocks(ctx context.Context, keys []cid.Cid) (<-chan blocks.Block, error) {
+	fmt.Println("I'm here....0")
 	ctx = logging.ContextWithLoggable(ctx, s.uuid)
 
 	return bsgetter.AsyncGetBlocks(ctx, s.ctx, keys, s.notif,
@@ -316,6 +319,7 @@ func (s *Session) run(ctx context.Context) {
 				// Wants were sent to a peer
 				s.sw.WantsSent(oper.keys)
 			case opBroadcast:
+				fmt.Println("i'm here? before hehehe?")
 				// Broadcast want-haves to all peers
 				s.broadcast(ctx, oper.keys)
 			default:
@@ -323,6 +327,7 @@ func (s *Session) run(ctx context.Context) {
 			}
 		case <-s.idleTick.C:
 			// The session hasn't received blocks for a while, broadcast
+			fmt.Println("idle tick broadcast")
 			s.broadcast(ctx, nil)
 		case <-s.periodicSearchTimer.C:
 			// Periodically search for a random live want
@@ -349,7 +354,8 @@ func (s *Session) broadcast(ctx context.Context, wants []cid.Cid) {
 	}
 
 	// Broadcast a want-have for the live wants to everyone we're connected to
-	s.broadcastWantHaves(ctx, wants)
+	fmt.Println("Helelele")
+	s.broadcastWantHaves(ctx, wants) // <- This seems to be the key place. // NOTE <:=======
 
 	// do not find providers on consecutive ticks
 	// -- just rely on periodic search widening
@@ -388,6 +394,7 @@ func (s *Session) handlePeriodicSearch(ctx context.Context) {
 // findMorePeers attempts to find more peers for a session by searching for
 // providers for the given Cid
 func (s *Session) findMorePeers(ctx context.Context, c cid.Cid) {
+	fmt.Println("find more peers for ", c)
 	go func(k cid.Cid) {
 		for p := range s.providerFinder.FindProvidersAsync(ctx, k) {
 			// When a provider indicates that it has a cid, it's equivalent to
