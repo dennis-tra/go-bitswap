@@ -2,6 +2,10 @@ package session
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
 	"time"
 
 	bsbpm "github.com/ipfs/go-bitswap/internal/blockpresencemanager"
@@ -20,6 +24,8 @@ import (
 
 var log = logging.Logger("bs:sess")
 var sflog = log.Desugar()
+
+var ifLog = false
 
 const (
 	broadcastLiveWantsLimit = 64
@@ -229,7 +235,30 @@ func (s *Session) logReceiveFrom(from peer.ID, interestedKs []cid.Cid, haves []c
 
 // GetBlock fetches a single block.
 func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, error) {
-	return bsgetter.SyncGetBlock(parent, k, s.GetBlocks)
+	ifLog = false
+	ipfsTestFolder := os.Getenv("PERFORMANCE_TEST_DIR")
+	if ipfsTestFolder == "" {
+		ipfsTestFolder = "/ipfs-tests"
+	}
+	if _, err := os.Stat(path.Join(ipfsTestFolder, fmt.Sprintf("lookup-%v", k.String()))); err == nil {
+		os.Remove(path.Join(ipfsTestFolder, fmt.Sprintf("lookup-%v", k.String())))
+		ifLog = true
+		ioutil.WriteFile(path.Join(ipfsTestFolder, fmt.Sprintf("in-progress-lookup-%v", k.String())), []byte{1}, os.ModePerm)
+	}
+	if ifLog {
+		fmt.Printf("Start retrieving content for %v\n", k.String())
+	}
+	block, err := bsgetter.SyncGetBlock(parent, k, s.GetBlocks)
+	if ifLog {
+		if err == nil {
+			fmt.Printf("Done retrieving content for %v without error\n", k.String())
+		} else {
+			fmt.Printf("Done retrieving content for %v with error %v\n", k.String(), err.Error())
+		}
+		os.WriteFile(path.Join(ipfsTestFolder, fmt.Sprintf("ok-lookup-%v", k.String())), []byte{0}, os.ModePerm)
+		ifLog = false
+	}
+	return block, err
 }
 
 // GetBlocks fetches a set of blocks within the context of this session and
@@ -349,7 +378,9 @@ func (s *Session) broadcast(ctx context.Context, wants []cid.Cid) {
 	}
 
 	// Broadcast a want-have for the live wants to everyone we're connected to
-	s.broadcastWantHaves(ctx, wants)
+	if !ifLog {
+		s.broadcastWantHaves(ctx, wants)
+	}
 
 	// do not find providers on consecutive ticks
 	// -- just rely on periodic search widening
@@ -392,6 +423,9 @@ func (s *Session) findMorePeers(ctx context.Context, c cid.Cid) {
 		for p := range s.providerFinder.FindProvidersAsync(ctx, k) {
 			// When a provider indicates that it has a cid, it's equivalent to
 			// the providing peer sending a HAVE
+			if ifLog {
+				fmt.Printf("Got provider %v for content %v\n", p.String(), c.String())
+			}
 			s.sws.Update(p, nil, []cid.Cid{c}, nil)
 		}
 	}(c)
