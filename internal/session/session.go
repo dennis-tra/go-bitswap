@@ -241,7 +241,6 @@ func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, err
 		ipfsTestFolder = "/ipfs-tests"
 	}
 	if _, err := os.Stat(path.Join(ipfsTestFolder, fmt.Sprintf("lookup-%v", k.String()))); err == nil {
-		os.Remove(path.Join(ipfsTestFolder, fmt.Sprintf("lookup-%v", k.String())))
 		ifLog = true
 		ioutil.WriteFile(path.Join(ipfsTestFolder, fmt.Sprintf("in-progress-lookup-%v", k.String())), []byte{1}, os.ModePerm)
 	}
@@ -255,6 +254,7 @@ func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, err
 		} else {
 			fmt.Printf("Done retrieving content for %v with error %v\n", k.String(), err.Error())
 		}
+		os.Remove(path.Join(ipfsTestFolder, fmt.Sprintf("lookup-%v", k.String())))
 		os.WriteFile(path.Join(ipfsTestFolder, fmt.Sprintf("ok-lookup-%v", k.String())), []byte{0}, os.ModePerm)
 		ifLog = false
 	}
