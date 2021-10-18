@@ -378,9 +378,7 @@ func (s *Session) broadcast(ctx context.Context, wants []cid.Cid) {
 	}
 
 	// Broadcast a want-have for the live wants to everyone we're connected to
-	if !ifLog {
-		s.broadcastWantHaves(ctx, wants)
-	}
+	s.broadcastWantHaves(ctx, wants)
 
 	// do not find providers on consecutive ticks
 	// -- just rely on periodic search widening
@@ -497,8 +495,9 @@ func (s *Session) wantBlocks(ctx context.Context, newks []cid.Cid) {
 
 // Send want-haves to all connected peers
 func (s *Session) broadcastWantHaves(ctx context.Context, wants []cid.Cid) {
-	log.Debugw("broadcastWantHaves", "session", s.id, "cids", wants)
-	s.pm.BroadcastWantHaves(ctx, wants)
+	if !ifLog {
+		s.pm.BroadcastWantHaves(ctx, wants)
+	}
 }
 
 // The session will broadcast if it has outstanding wants and doesn't receive
