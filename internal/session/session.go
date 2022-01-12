@@ -245,15 +245,11 @@ func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, err
 		ioutil.WriteFile(path.Join(ipfsTestFolder, fmt.Sprintf("in-progress-lookup-%v", k.String())), []byte{1}, os.ModePerm)
 	}
 	if ifLog {
-		fmt.Printf("Start retrieving content for %v\n", k.String())
+		fmt.Printf("%s: Start retrieving content for %v\n", time.Now().Format(time.RFC3339Nano), k.String())
 	}
 	block, err := bsgetter.SyncGetBlock(parent, k, s.GetBlocks)
 	if ifLog {
-		if err == nil {
-			fmt.Printf("Done retrieving content for %v without error\n", k.String())
-		} else {
-			fmt.Printf("Done retrieving content for %v with error %v\n", k.String(), err.Error())
-		}
+		fmt.Printf("%s: Done retrieving content for %v error: %s\n", time.Now().Format(time.RFC3339Nano), k.String(), err.Error())
 		os.Remove(path.Join(ipfsTestFolder, fmt.Sprintf("lookup-%v", k.String())))
 		os.WriteFile(path.Join(ipfsTestFolder, fmt.Sprintf("ok-lookup-%v", k.String())), []byte{0}, os.ModePerm)
 		ifLog = false
