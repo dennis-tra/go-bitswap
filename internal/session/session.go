@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	bsbpm "github.com/ipfs/go-bitswap/internal/blockpresencemanager"
@@ -249,7 +250,11 @@ func (s *Session) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, err
 	}
 	block, err := bsgetter.SyncGetBlock(parent, k, s.GetBlocks)
 	if ifLog {
-		fmt.Printf("%s: Done retrieving content for %v error: %s\n", time.Now().Format(time.RFC3339Nano), k.String(), err.Error())
+		errMsg := ""
+		if err != nil {
+			errMsg = strings.ReplaceAll(err.Error(), "\n", ", ")
+		}
+		fmt.Printf("%s: Done retrieving content for %v error: %s\n", time.Now().Format(time.RFC3339Nano), k.String(), errMsg)
 		os.Remove(path.Join(ipfsTestFolder, fmt.Sprintf("lookup-%v", k.String())))
 		os.WriteFile(path.Join(ipfsTestFolder, fmt.Sprintf("ok-lookup-%v", k.String())), []byte{0}, os.ModePerm)
 		ifLog = false
@@ -418,7 +423,7 @@ func (s *Session) findMorePeers(ctx context.Context, c cid.Cid) {
 			// When a provider indicates that it has a cid, it's equivalent to
 			// the providing peer sending a HAVE
 			if ifLog {
-				fmt.Printf("Got provider %v for content %v\n", p.String(), c.String())
+				fmt.Printf("%s: Got provider %v for content %v\n", time.Now().Format(time.RFC3339Nano), p.String(), c.String())
 			}
 			s.sws.Update(p, nil, []cid.Cid{c}, nil)
 		}
