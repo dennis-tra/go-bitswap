@@ -361,6 +361,7 @@ func (bsnet *impl) SetDelegate(r Receiver) {
 }
 
 func (bsnet *impl) ConnectTo(ctx context.Context, p peer.ID) error {
+	fmt.Printf("%s: Bitswap connect to peer %s\n", time.Now().Format(time.RFC3339Nano), p)
 	return bsnet.host.Connect(ctx, peer.AddrInfo{ID: p})
 }
 
